@@ -155,4 +155,48 @@ export const getTargetUrlHistory = async () => {
     console.error('获取目标地址历史记录失败:', error);
     return [];
   }
+};
+
+// 删除源地址历史记录
+export const deleteSourceUrlHistory = async (index) => {
+  try {
+    const history = await getCookieHistory();
+    if (!history || history.length === 0) return [];
+    
+    const sourceUrls = [...new Set(history.map(item => item.source))].slice(0, 10);
+    const urlToDelete = sourceUrls[index];
+    
+    if (urlToDelete) {
+      // 过滤掉包含要删除URL的记录
+      const newHistory = history.filter(item => item.source !== urlToDelete);
+      await saveCookieHistory(newHistory);
+    }
+    
+    return await getSourceUrlHistory();
+  } catch (error) {
+    console.error('删除源地址历史记录失败:', error);
+    return [];
+  }
+};
+
+// 删除目标地址历史记录
+export const deleteTargetUrlHistory = async (index) => {
+  try {
+    const history = await getCookieHistory();
+    if (!history || history.length === 0) return [];
+    
+    const targetUrls = [...new Set(history.map(item => item.target))].slice(0, 10);
+    const urlToDelete = targetUrls[index];
+    
+    if (urlToDelete) {
+      // 过滤掉包含要删除URL的记录
+      const newHistory = history.filter(item => item.target !== urlToDelete);
+      await saveCookieHistory(newHistory);
+    }
+    
+    return await getTargetUrlHistory();
+  } catch (error) {
+    console.error('删除目标地址历史记录失败:', error);
+    return [];
+  }
 }; 

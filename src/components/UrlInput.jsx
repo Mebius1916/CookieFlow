@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Input, Dropdown } from 'antd';
-import { HistoryOutlined } from '@ant-design/icons';
+import { HistoryOutlined, DeleteOutlined } from '@ant-design/icons';
 
 const UrlInput = ({ 
   value, 
   onChange, 
   placeholder, 
   history = [], 
-  label
+  label,
+  onDeleteHistory
 }) => {
   const [open, setOpen] = useState(false);
   
@@ -15,16 +16,29 @@ const UrlInput = ({
     onChange(url);
     setOpen(false);
   };
+
+  const handleDeleteHistory = (index, e) => {
+    e.stopPropagation();
+    if (onDeleteHistory) {
+      onDeleteHistory(index);
+    }
+  };
   
   //历史记录的item
   const historyItems = {
     items: history.map((url, index) => ({
       key: index,
       label: <div 
-        className="truncate max-w-64 cursor-pointer py-1 px-2 hover:bg-gray-100"
+        className="flex items-center justify-between max-w-64 cursor-pointer py-1 px-2 hover:bg-gray-100 group"
         onClick={() => handleHistoryClick(url)}
       >
-        {url}
+        <span className="truncate flex-1 mr-2">{url}</span>
+        {onDeleteHistory && (
+          <DeleteOutlined
+            className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => handleDeleteHistory(index, e)}
+          />
+        )}
       </div>
     }))
   };

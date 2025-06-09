@@ -8,7 +8,9 @@ import {
   clearCookies,
   saveCookieOperation,
   getSourceUrlHistory,
-  getTargetUrlHistory
+  getTargetUrlHistory,
+  deleteSourceUrlHistory,
+  deleteTargetUrlHistory
 } from '../../utils/cookie';
 import { showInputError, showOperationResult, showError, showInfo } from '../../utils/message';
 
@@ -100,6 +102,28 @@ const Popup = () => {
     }
   };
 
+  // 删除源地址历史记录
+  const handleDeleteSourceHistory = async (index) => {
+    try {
+      const newHistory = await deleteSourceUrlHistory(index);
+      setSourceHistory(newHistory);
+    } catch (error) {
+      console.error('删除源地址历史记录失败:', error);
+      showError('删除历史记录');
+    }
+  };
+
+  // 删除目标地址历史记录
+  const handleDeleteTargetHistory = async (index) => {
+    try {
+      const newHistory = await deleteTargetUrlHistory(index);
+      setTargetHistory(newHistory);
+    } catch (error) {
+      console.error('删除目标地址历史记录失败:', error);
+      showError('删除历史记录');
+    }
+  };
+
   return (
     <div className="p-4 w-80"> 
       <header className="mb-3">
@@ -115,6 +139,7 @@ const Popup = () => {
           placeholder="请输入源地址"
           history={sourceHistory}
           label="源地址"
+          onDeleteHistory={handleDeleteSourceHistory}
         />
         
         <UrlInput 
@@ -123,6 +148,7 @@ const Popup = () => {
           placeholder="请输入目标地址"
           history={targetHistory}
           label="目标地址"
+          onDeleteHistory={handleDeleteTargetHistory}
         />
         
         <div className="flex space-x-2 mt-3">
