@@ -101,14 +101,14 @@ const Popup = () => {
   };
 
   return (
-    <div className="p-4 w-96">
-      <header className="mb-6">
+    <div className="p-4 w-80"> 
+      <header className="mb-3">
         <h1 className="text-2xl font-bold text-blue-600">CookieFlow</h1>
         <p className="text-sm text-gray-500">一个简洁现代的Cookie复制和管理工具</p>
       </header>
 
       {/* 表单 */}
-      <div className="mb-6">
+      <div className="mb-3">
         <UrlInput 
           value={sourceUrl}
           onChange={setSourceUrl}
@@ -125,7 +125,7 @@ const Popup = () => {
           label="目标地址"
         />
         
-        <div className="flex space-x-2 mt-6">
+        <div className="flex space-x-2 mt-3">
           <Button
             type="primary"
             onClick={handleCopyCookies}

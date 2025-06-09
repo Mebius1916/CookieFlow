@@ -40,24 +40,32 @@ const UrlInput = ({
       <Dropdown
         menu={historyItems}
         placement="bottom"
-        trigger={['click']}
         open={open && history.length > 0}
-        onOpenChange={setOpen}
+        overlayClassName="max-h-32 overflow-y-auto"
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setOpen(false);
+          }
+        }}
       >
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           suffix={
-            history.length > 0 && (
-              <HistoryOutlined
-                className="text-gray-400 hover:text-gray-600 cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
+            <HistoryOutlined
+              className={`cursor-pointer ${
+                history.length > 0 
+                  ? 'text-gray-400 hover:text-gray-600' 
+                  : 'text-gray-300 cursor-not-allowed'
+              }`}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (history.length > 0) {
                   setOpen(!open);
-                }}
-              />
-            )
+                }
+              }}
+            />
           }
         />
       </Dropdown>
