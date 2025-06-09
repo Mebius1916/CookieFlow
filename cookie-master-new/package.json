@@ -12,7 +12,7 @@
     "cookie",
     "react"
   ],
-  "author": "",
+  "author": "liaoshihan@baidu.com",
   "license": "ISC",
   "dependencies": {
     "antd": "^5.25.4",
