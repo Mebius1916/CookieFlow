@@ -4,6 +4,17 @@
 /// <reference types="chrome"/>
 import { getCookieHistory, saveCookieHistory } from './storage';
 
+// 提取URL的源部分(协议+域名+端口)
+export const extractOrigin = (url) => {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.origin; 
+  } catch (error) {
+    console.error('URL格式无效:', url);
+    return url; // 如果解析失败，返回原始URL
+  }
+};
+
 // 验证URL是否有效
 export const isValidUrl = (url) => {
   try {
@@ -14,11 +25,14 @@ export const isValidUrl = (url) => {
   }
 };
 
-// 获取当前标签页的URL
+// 获取当前标签页的URL(只返回协议+域名+端口)
 export const getCurrentTabUrl = async () => {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    return tab?.url || null;
+    if (tab?.url) {
+      return extractOrigin(tab.url);
+    }
+    return null;
   } catch (error) {
     console.error('获取当前标签页URL失败:', error);
     return null;

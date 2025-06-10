@@ -10,7 +10,9 @@ import {
   getSourceUrlHistory,
   getTargetUrlHistory,
   deleteSourceUrlHistory,
-  deleteTargetUrlHistory
+  deleteTargetUrlHistory,
+  extractOrigin,
+  isValidUrl
 } from '../../utils/cookie';
 import { showInputError, showOperationResult, showError, showInfo } from '../../utils/message';
 
@@ -19,10 +21,36 @@ const Popup = () => {
   const [targetUrl, setTargetUrl] = useState('http://localhost:8080');
   const [sourceHistory, setSourceHistory] = useState([]);
   const [targetHistory, setTargetHistory] = useState([]);
+  const [urlValidation, setUrlValidation] = useState({
+    sourceValid: true,
+    targetValid: true
+  });
   const [loading, setLoading] = useState({
     copy: false,
     clear: false
   });
+
+  // 标准化URL处理函数 - 只保留协议+域名+端口
+  const handleUrlChange = (url, setter, validationKey) => {
+    if (url.trim()) {
+      // 先检查URL是否合法
+      if (!isValidUrl(url)) {
+        // URL不合法，更新验证状态并保存原始输入
+        setUrlValidation(prev => ({ ...prev, [validationKey]: false }));
+        setter(url); // 保存原始输入，让用户继续编辑
+        return;
+      }
+      
+      // URL合法，提取origin部分并更新验证状态
+      setUrlValidation(prev => ({ ...prev, [validationKey]: true }));
+      const normalizedUrl = extractOrigin(url);
+      setter(normalizedUrl);
+    } else {
+      // 空值也认为是有效的
+      setUrlValidation(prev => ({ ...prev, [validationKey]: true }));
+      setter(url);
+    }
+  };
 
   // 初始化数据
   useEffect(() => {
@@ -33,7 +61,6 @@ const Popup = () => {
           getSourceUrlHistory(),
           getTargetUrlHistory()
         ]);
-        
         setSourceUrl(currentUrl || '');
         setSourceHistory(sourceHistoryUrls);
         setTargetHistory(targetHistoryUrls);
@@ -125,30 +152,31 @@ const Popup = () => {
   };
 
   return (
-    <div className="p-4 w-80"> 
+    <div className="p-4 w-80 min-h-0"> 
       <header className="mb-3">
         <h1 className="text-2xl font-bold text-blue-600">CookieFlow</h1>
         <p className="text-sm text-gray-500">一个简洁现代的Cookie复制和管理工具</p>
       </header>
 
-      {/* 表单 */}
-      <div className="mb-3">
+      <div>
         <UrlInput 
           value={sourceUrl}
-          onChange={setSourceUrl}
+          onChange={(url) => handleUrlChange(url, setSourceUrl, 'sourceValid')}
           placeholder="请输入源地址"
           history={sourceHistory}
           label="源地址"
           onDeleteHistory={handleDeleteSourceHistory}
+          isValid={urlValidation.sourceValid}
         />
         
         <UrlInput 
           value={targetUrl}
-          onChange={setTargetUrl}
+          onChange={(url) => handleUrlChange(url, setTargetUrl, 'targetValid')}
           placeholder="请输入目标地址"
           history={targetHistory}
           label="目标地址"
           onDeleteHistory={handleDeleteTargetHistory}
+          isValid={urlValidation.targetValid}
         />
         
         <div className="flex space-x-2 mt-3">
@@ -156,7 +184,7 @@ const Popup = () => {
             type="primary"
             onClick={handleCopyCookies}
             loading={loading.copy}
-            disabled={loading.copy || loading.clear}
+            disabled={loading.copy || loading.clear || !urlValidation.sourceValid || !urlValidation.targetValid}
           >
             复制Cookie
           </Button>
@@ -164,7 +192,7 @@ const Popup = () => {
           <Button
             onClick={handleClearCookies}
             loading={loading.clear}
-            disabled={loading.copy || loading.clear}
+            disabled={loading.copy || loading.clear || !urlValidation.targetValid}
           >
             清空Cookie
           </Button>

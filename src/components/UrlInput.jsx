@@ -8,7 +8,8 @@ const UrlInput = ({
   placeholder, 
   history = [], 
   label,
-  onDeleteHistory
+  onDeleteHistory,
+  isValid = true
 }) => {
   const [open, setOpen] = useState(false);
   
@@ -44,7 +45,7 @@ const UrlInput = ({
   };
 
   return (
-    <div className="mb-4">
+    <div className="mb-4 relative">
       {label && (
         <label className="block text-sm font-medium text-gray-700 mb-1">
           {label}
@@ -66,6 +67,7 @@ const UrlInput = ({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          status={!isValid && value.trim() ? 'error' : ''}
           suffix={
             <HistoryOutlined
               className={`cursor-pointer ${
@@ -83,6 +85,12 @@ const UrlInput = ({
           }
         />
       </Dropdown>
+      
+      {!isValid && value.trim() && (
+        <div className="absolute left-0 top-full mt-1 text-red-500 text-xs bg-white border border-red-200 rounded px-2 py-1 shadow-sm z-10 max-w-full">
+          URL格式不正确，请输入完整的URL（如：https://example.com）
+        </div>
+      )}
     </div>
   );
 };
