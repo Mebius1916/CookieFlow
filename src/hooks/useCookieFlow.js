@@ -1,18 +1,6 @@
 import { useState, useEffect } from 'react';
-import {
-  getCurrentTabUrl,
-  getCookies,
-  setCookies,
-  clearCookies,
-  saveCookieOperation,
-  getSourceUrlHistory,
-  getTargetUrlHistory,
-  deleteSourceUrlHistory,
-  deleteTargetUrlHistory,
-  extractOrigin,
-  isValidUrl
-} from '../utils/cookie';
-import { showInputError, showOperationResult, showError, showInfo } from '../utils/message';
+import { CookieService } from '../services/cookieService';
+import { showError } from '../utils/message';
 
 export const useCookieFlow = () => {
   // 状态管理
@@ -29,117 +17,76 @@ export const useCookieFlow = () => {
     clear: false
   });
 
-  // URL处理函数
+  // URL处理函数 - 使用CookieService
   const handleUrlChange = (url, setter, validationKey) => {
-    if (url.trim()) {
-      if (!isValidUrl(url)) {
-        setUrlValidation(prev => ({ ...prev, [validationKey]: false }));
-        setter(url);
-        return;
-      }
-      
-      setUrlValidation(prev => ({ ...prev, [validationKey]: true }));
-      const normalizedUrl = extractOrigin(url);
-      setter(normalizedUrl);
-    } else {
-      setUrlValidation(prev => ({ ...prev, [validationKey]: true }));
-      setter(url);
-    }
+    const result = CookieService.processUrl(url);
+    
+    // 更新验证状态
+    setUrlValidation(prev => ({ ...prev, [validationKey]: result.isValid }));
+    
+    // 设置处理后的URL
+    setter(result.processedUrl);
   };
 
-  // 初始化数据
+  // 初始化数据 - 使用CookieService
   const initializeData = async () => {
     try {
-      const [currentUrl, sourceHistoryUrls, targetHistoryUrls] = await Promise.all([
-        getCurrentTabUrl(),
-        getSourceUrlHistory(),
-        getTargetUrlHistory()
-      ]);
-      setSourceUrl(currentUrl || '');
-      setSourceHistory(sourceHistoryUrls);
-      setTargetHistory(targetHistoryUrls);
+      const data = await CookieService.initialize();
+      
+      setSourceUrl(data.currentUrl);
+      setSourceHistory(data.sourceHistory || []);
+      setTargetHistory(data.targetHistory || []);
     } catch (error) {
       console.error('初始化失败:', error);
       showError('初始化');
     }
   };
 
-  // 复制Cookie处理
+  // 复制Cookie处理 - 使用CookieService
   const handleCopyCookies = async () => {
-    if (!sourceUrl) {
-      showInputError('源地址');
-      return;
-    }
-    
-    if (!targetUrl) {
-      showInputError('目标地址');
-      return;
-    }
+    setLoading(prev => ({ ...prev, copy: true }));
     
     try {
-      setLoading(prev => ({ ...prev, copy: true }));
-      const cookies = await getCookies(sourceUrl);
-      if (cookies.length === 0) {
-        showInfo('源地址没有可复制的Cookie');
-        return;
+      const result = await CookieService.copyCookies(sourceUrl, targetUrl);
+      
+      // 如果需要更新历史记录
+      if (result.shouldUpdateHistory) {
+        const historyData = await CookieService.getHistory();
+        setSourceHistory(historyData.sourceHistory || []);
+        setTargetHistory(historyData.targetHistory || []);
       }
-      
-      const result = await setCookies(cookies, targetUrl);
-      await saveCookieOperation(sourceUrl, targetUrl, result.successCount);
-      
-      // 更新历史记录
-      const [sourceHistoryUrls, targetHistoryUrls] = await Promise.all([
-        getSourceUrlHistory(),
-        getTargetUrlHistory()
-      ]);
-      
-      setSourceHistory(sourceHistoryUrls);
-      setTargetHistory(targetHistoryUrls);
-  
-      showOperationResult('复制', result);
-    } catch (error) {
-      console.error('复制Cookie失败:', error);
-      showError('复制Cookie');
     } finally {
       setLoading(prev => ({ ...prev, copy: false }));
     }
   };
 
-  // 清空Cookie处理
+  // 清空Cookie处理 - 使用CookieService
   const handleClearCookies = async () => {
-    if (!targetUrl) {
-      showInputError('目标地址');
-      return;
-    }
+    setLoading(prev => ({ ...prev, clear: true }));
     
     try {
-      setLoading(prev => ({ ...prev, clear: true }));
-      const result = await clearCookies(targetUrl);
-      showOperationResult('清除', result);
-    } catch (error) {
-      console.error('清除Cookie失败:', error);
-      showError('清除Cookie');
+      await CookieService.clearCookies(targetUrl);
     } finally {
       setLoading(prev => ({ ...prev, clear: false }));
     }
   };
 
-  // 删除源地址历史记录
+  // 删除源地址历史记录 - 使用CookieService
   const handleDeleteSourceHistory = async (index) => {
     try {
-      const newHistory = await deleteSourceUrlHistory(index);
-      setSourceHistory(newHistory);
+      const newHistory = await CookieService.deleteSourceHistory(index);
+      setSourceHistory(newHistory || []);
     } catch (error) {
       console.error('删除源地址历史记录失败:', error);
       showError('删除历史记录');
     }
   };
 
-  // 删除目标地址历史记录
+  // 删除目标地址历史记录 - 使用CookieService
   const handleDeleteTargetHistory = async (index) => {
     try {
-      const newHistory = await deleteTargetUrlHistory(index);
-      setTargetHistory(newHistory);
+      const newHistory = await CookieService.deleteTargetHistory(index);
+      setTargetHistory(newHistory || []);
     } catch (error) {
       console.error('删除目标地址历史记录失败:', error);
       showError('删除历史记录');
@@ -151,17 +98,13 @@ export const useCookieFlow = () => {
     initializeData();
   }, []);
 
-  // 返回状态和方法
   return {
-    // 状态
     sourceUrl,
     targetUrl,
     sourceHistory,
     targetHistory,
     urlValidation,
     loading,
-    
-    // 方法
     setSourceUrl,
     setTargetUrl,
     handleUrlChange,
