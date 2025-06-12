@@ -3,7 +3,6 @@ import { CookieService } from '../services/cookieService';
 import { showError } from '../utils/message';
 
 export const useCookieFlow = () => {
-  // 状态管理
   const [sourceUrl, setSourceUrl] = useState('');
   const [targetUrl, setTargetUrl] = useState('http://localhost:8080');
   const [sourceHistory, setSourceHistory] = useState([]);
@@ -20,15 +19,11 @@ export const useCookieFlow = () => {
   // URL处理函数 - 使用CookieService
   const handleUrlChange = (url, setter, validationKey) => {
     const result = CookieService.processUrl(url);
-    
-    // 更新验证状态
     setUrlValidation(prev => ({ ...prev, [validationKey]: result.isValid }));
-    
-    // 设置处理后的URL
     setter(result.processedUrl);
   };
 
-  // 初始化数据 - 使用CookieService
+  // 初始化数据
   const initializeData = async () => {
     try {
       const data = await CookieService.initialize();
@@ -42,14 +37,12 @@ export const useCookieFlow = () => {
     }
   };
 
-  // 复制Cookie处理 - 使用CookieService
+  // 复制Cookie
   const handleCopyCookies = async () => {
     setLoading(prev => ({ ...prev, copy: true }));
     
     try {
       const result = await CookieService.copyCookies(sourceUrl, targetUrl);
-      
-      // 如果需要更新历史记录
       if (result.shouldUpdateHistory) {
         const historyData = await CookieService.getHistory();
         setSourceHistory(historyData.sourceHistory || []);
@@ -60,7 +53,7 @@ export const useCookieFlow = () => {
     }
   };
 
-  // 清空Cookie处理 - 使用CookieService
+  // 清空Cookie
   const handleClearCookies = async () => {
     setLoading(prev => ({ ...prev, clear: true }));
     
@@ -71,7 +64,7 @@ export const useCookieFlow = () => {
     }
   };
 
-  // 删除源地址历史记录 - 使用CookieService
+  // 删除源地址历史记录
   const handleDeleteSourceHistory = async (index) => {
     try {
       const newHistory = await CookieService.deleteSourceHistory(index);
@@ -82,7 +75,7 @@ export const useCookieFlow = () => {
     }
   };
 
-  // 删除目标地址历史记录 - 使用CookieService
+  // 删除目标地址历史记录
   const handleDeleteTargetHistory = async (index) => {
     try {
       const newHistory = await CookieService.deleteTargetHistory(index);
@@ -93,7 +86,6 @@ export const useCookieFlow = () => {
     }
   };
 
-  // 初始化效果
   useEffect(() => {
     initializeData();
   }, []);

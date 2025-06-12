@@ -18,12 +18,10 @@ import { processUrlInput, validateFormUrls } from '../utils/urlValidation';
 import { showInputError, showOperationResult, showError, showInfo } from '../utils/message';
 
 export class CookieService {
-  // URL处理
   static processUrl(url) {
     return processUrlInput(url);
   }
 
-  // 执行Cookie复制
   static async copyCookies(sourceUrl, targetUrl) {
     const validation = validateFormUrls(sourceUrl, targetUrl);
     if (!validation.isValid) {
@@ -54,7 +52,6 @@ export class CookieService {
     }
   }
 
-  // 清除Cookie
   static async clearCookies(targetUrl) {
     if (!targetUrl) {
       showInputError('目标地址');
