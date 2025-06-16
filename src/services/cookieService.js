@@ -1,8 +1,3 @@
-/**
- * Cookie服务 - 整合Cookie相关的所有业务操作
- * 这里整合业务逻辑，但基础API保持独立
- */
-
 import { 
   getCookies, 
   setCookies, 
@@ -15,57 +10,50 @@ import {
   getCurrentTabUrl
 } from '../utils/cookie';
 import { processUrlInput, validateFormUrls } from '../utils/urlValidation';
-import { showInputError, showOperationResult, showError, showInfo } from '../utils/message';
+import { showOperationResult, showError, showInfo } from '../utils/message';
+import { message } from 'antd';
 
 export class CookieService {
-  static processUrl(url) {
-    return processUrlInput(url);
-  }
-
   static async copyCookies(sourceUrl, targetUrl) {
     const validation = validateFormUrls(sourceUrl, targetUrl);
     if (!validation.isValid) {
-      showInputError(validation.errors[0]);
-      return { success: false, error: validation.errors[0] };
+      message.error(validation.errors[0]);
+      return false;
     }
     
     try {
       const cookies = await getCookies(sourceUrl);
       if (cookies.length === 0) {
         showInfo('源地址没有可复制的Cookie');
-        return { success: true, message: '没有可复制的Cookie' };
+        return true;
       }
       
       const result = await setCookies(cookies, targetUrl);
       await saveCookieOperation(sourceUrl, targetUrl, result.successCount);
       showOperationResult('复制', result);
       
-      return { 
-        success: true, 
-        result,
-        shouldUpdateHistory: true 
-      };
+      return true;
     } catch (error) {
       console.error('复制Cookie失败:', error);
       showError('复制Cookie');
-      return { success: false, error: error.message };
+      return false;
     }
   }
 
   static async clearCookies(targetUrl) {
     if (!targetUrl) {
-      showInputError('目标地址');
-      return { success: false, error: '目标地址不能为空' };
+      message.error('目标地址不能为空');
+      return false;
     }
     
     try {
       const result = await clearCookies(targetUrl);
       showOperationResult('清除', result);
-      return { success: true, result };
+      return true;
     } catch (error) {
       console.error('清除Cookie失败:', error);
       showError('清除Cookie');
-      return { success: false, error: error.message };
+      return false;
     }
   }
 
@@ -85,13 +73,8 @@ export class CookieService {
   }
 
   // 删除历史记录
-  static async deleteSourceHistory(index) {
-    return await deleteSourceUrlHistory(index);
-  }
-
-  static async deleteTargetHistory(index) {
-    return await deleteTargetUrlHistory(index);
-  }
+  static deleteSourceHistory = deleteSourceUrlHistory;
+  static deleteTargetHistory = deleteTargetUrlHistory;
 
   // 初始化数据
   static async initialize() {

@@ -1,9 +1,5 @@
 import { message } from 'antd';
 
-export const showInputError = (field) => {
-  message.error(`请输入${field}`);
-};
-
 export const showOperationResult = (operation, result) => {
   if (!result) {
     message.error(`${operation}Cookie失败`);

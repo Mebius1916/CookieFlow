@@ -1,18 +1,13 @@
 import { isValidUrl, extractOrigin } from './cookie';
-
-/**
- * URL处理和验证工具函数
- */
-
 // 处理URL输入，返回处理结果
 export const processUrlInput = (url) => {
+  // 去除url两端的空格
   const trimmedUrl = url.trim();
   
   if (!trimmedUrl) {
     return {
       isValid: true,
-      processedUrl: '',
-      originalUrl: url
+      processedUrl: ''
     };
   }
   
@@ -20,8 +15,7 @@ export const processUrlInput = (url) => {
   
   return {
     isValid,
-    processedUrl: isValid ? extractOrigin(trimmedUrl) : url,
-    originalUrl: url
+    processedUrl: isValid ? extractOrigin(trimmedUrl) : url
   };
 };
 

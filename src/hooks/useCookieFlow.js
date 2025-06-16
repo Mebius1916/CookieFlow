@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { CookieService } from '../services/cookieService';
+import { processUrlInput } from '../utils/urlValidation';
 import { showError } from '../utils/message';
 
 export const useCookieFlow = () => {
@@ -7,19 +8,26 @@ export const useCookieFlow = () => {
   const [targetUrl, setTargetUrl] = useState('http://localhost:8080');
   const [sourceHistory, setSourceHistory] = useState([]);
   const [targetHistory, setTargetHistory] = useState([]);
-  const [urlValidation, setUrlValidation] = useState({
-    sourceValid: true,
-    targetValid: true
-  });
-  const [loading, setLoading] = useState({
-    copy: false,
-    clear: false
-  });
+  const [sourceValid, setSourceValid] = useState(true);
+  const [targetValid, setTargetValid] = useState(true);
+  const [copyLoading, setCopyLoading] = useState(false);
+  const [clearLoading, setClearLoading] = useState(false);
+
+  // 更新历史记录
+  const updateHistory = async () => {
+    try {
+      const historyData = await CookieService.getHistory();
+      setSourceHistory(historyData.sourceHistory || []);
+      setTargetHistory(historyData.targetHistory || []);
+    } catch (error) {
+      console.error('更新历史记录失败:', error);
+    }
+  };
 
   // URL处理函数
-  const handleUrlChange = (url, setter, validationKey) => {
-    const result = CookieService.processUrl(url);
-    setUrlValidation(prev => ({ ...prev, [validationKey]: result.isValid }));
+  const handleUrlChange = (url, setter, validationSetter) => {
+    const result = processUrlInput(url);
+    validationSetter(result.isValid);
     setter(result.processedUrl);
   };
 
@@ -27,7 +35,6 @@ export const useCookieFlow = () => {
   const initializeData = async () => {
     try {
       const data = await CookieService.initialize();
-      
       setSourceUrl(data.currentUrl);
       setSourceHistory(data.sourceHistory || []);
       setTargetHistory(data.targetHistory || []);
@@ -39,52 +46,53 @@ export const useCookieFlow = () => {
 
   // 复制Cookie
   const handleCopyCookies = async () => {
-    setLoading(prev => ({ ...prev, copy: true }));
+    setCopyLoading(true);
     
     try {
       const result = await CookieService.copyCookies(sourceUrl, targetUrl);
-      if (result.shouldUpdateHistory) {
-        const historyData = await CookieService.getHistory();
-        setSourceHistory(historyData.sourceHistory || []);
-        setTargetHistory(historyData.targetHistory || []);
+      if (result) {
+        await updateHistory();
       }
     } finally {
-      setLoading(prev => ({ ...prev, copy: false }));
+      setCopyLoading(false);
     }
   };
 
   // 清空Cookie
   const handleClearCookies = async () => {
-    setLoading(prev => ({ ...prev, clear: true }));
+    setClearLoading(true);
     
     try {
       await CookieService.clearCookies(targetUrl);
     } finally {
-      setLoading(prev => ({ ...prev, clear: false }));
+      setClearLoading(false);
+    }
+  };
+
+  // 删除历史记录的通用处理
+  const handleDeleteHistory = async (deleteFunction, setterFunction, errorMessage) => {
+    try {
+      const newHistory = await deleteFunction();
+      setterFunction(newHistory || []);
+    } catch (error) {
+      console.error(errorMessage, error);
+      showError('删除历史记录');
     }
   };
 
   // 删除源地址历史记录
-  const handleDeleteSourceHistory = async (index) => {
-    try {
-      const newHistory = await CookieService.deleteSourceHistory(index);
-      setSourceHistory(newHistory || []);
-    } catch (error) {
-      console.error('删除源地址历史记录失败:', error);
-      showError('删除历史记录');
-    }
-  };
+  const handleDeleteSourceHistory = (index) => handleDeleteHistory(
+    () => CookieService.deleteSourceHistory(index),
+    setSourceHistory,
+    '删除源地址历史记录失败:'
+  );
 
   // 删除目标地址历史记录
-  const handleDeleteTargetHistory = async (index) => {
-    try {
-      const newHistory = await CookieService.deleteTargetHistory(index);
-      setTargetHistory(newHistory || []);
-    } catch (error) {
-      console.error('删除目标地址历史记录失败:', error);
-      showError('删除历史记录');
-    }
-  };
+  const handleDeleteTargetHistory = (index) => handleDeleteHistory(
+    () => CookieService.deleteTargetHistory(index),
+    setTargetHistory,
+    '删除目标地址历史记录失败:'
+  );
 
   useEffect(() => {
     initializeData();
@@ -95,10 +103,14 @@ export const useCookieFlow = () => {
     targetUrl,
     sourceHistory,
     targetHistory,
-    urlValidation,
-    loading,
+    sourceValid,
+    targetValid,
+    copyLoading,
+    clearLoading,
     setSourceUrl,
     setTargetUrl,
+    setSourceValid,
+    setTargetValid,
     handleUrlChange,
     handleCopyCookies,
     handleClearCookies,

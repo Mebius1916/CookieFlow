@@ -144,68 +144,49 @@ export const saveCookieOperation = async (source, target, successCount) => {
   }
 };
 
-// 获取源地址历史记录
-export const getSourceUrlHistory = async () => {
+// 通用的历史记录获取函数
+const getUrlHistory = async (field) => {
   try {
     const history = await getCookieHistory();
     if (!history || history.length === 0) return [];
-    return [...new Set(history.map(item => item.source))].slice(0, 10);
+    return [...new Set(history.map(item => item[field]))].slice(0, 10);
   } catch (error) {
-    console.error('获取源地址历史记录失败:', error);
+    console.error(`获取${field}历史记录失败:`, error);
     return [];
   }
 };
+
+// 通用的历史记录删除函数
+const deleteUrlHistory = async (index, field, getHistoryFn) => {
+  try {
+    const history = await getCookieHistory();
+    if (!history || history.length === 0) return [];
+    
+    const urls = [...new Set(history.map(item => item[field]))].slice(0, 10);
+    const urlToDelete = urls[index];
+    
+    if (urlToDelete) {
+      const newHistory = history.filter(item => item[field] !== urlToDelete);
+      await saveCookieHistory(newHistory);
+    }
+    
+    return await getHistoryFn();
+  } catch (error) {
+    console.error(`删除${field}历史记录失败:`, error);
+    return [];
+  }
+};
+
+// 获取源地址历史记录
+export const getSourceUrlHistory = () => getUrlHistory('source');
 
 // 获取目标地址历史记录
-export const getTargetUrlHistory = async () => {
-  try {
-    const history = await getCookieHistory();
-    if (!history || history.length === 0) return [];
-    return [...new Set(history.map(item => item.target))].slice(0, 10);
-  } catch (error) {
-    console.error('获取目标地址历史记录失败:', error);
-    return [];
-  }
-};
+export const getTargetUrlHistory = () => getUrlHistory('target');
 
 // 删除源地址历史记录
-export const deleteSourceUrlHistory = async (index) => {
-  try {
-    const history = await getCookieHistory();
-    if (!history || history.length === 0) return [];
-    
-    const sourceUrls = [...new Set(history.map(item => item.source))].slice(0, 10);
-    const urlToDelete = sourceUrls[index];
-    
-    if (urlToDelete) {
-      const newHistory = history.filter(item => item.source !== urlToDelete);
-      await saveCookieHistory(newHistory);
-    }
-    
-    return await getSourceUrlHistory();
-  } catch (error) {
-    console.error('删除源地址历史记录失败:', error);
-    return [];
-  }
-};
+export const deleteSourceUrlHistory = (index) => 
+  deleteUrlHistory(index, 'source', getSourceUrlHistory);
 
 // 删除目标地址历史记录
-export const deleteTargetUrlHistory = async (index) => {
-  try {
-    const history = await getCookieHistory();
-    if (!history || history.length === 0) return [];
-    
-    const targetUrls = [...new Set(history.map(item => item.target))].slice(0, 10);
-    const urlToDelete = targetUrls[index];
-    
-    if (urlToDelete) {
-      const newHistory = history.filter(item => item.target !== urlToDelete);
-      await saveCookieHistory(newHistory);
-    }
-    
-    return await getTargetUrlHistory();
-  } catch (error) {
-    console.error('删除目标地址历史记录失败:', error);
-    return [];
-  }
-}; 
+export const deleteTargetUrlHistory = (index) => 
+  deleteUrlHistory(index, 'target', getTargetUrlHistory); 

@@ -9,8 +9,10 @@ const Popup = () => {
     targetUrl,
     sourceHistory,
     targetHistory,
-    urlValidation,
-    loading,
+    sourceValid,
+    targetValid,
+    copyLoading,
+    clearLoading,
     setSourceUrl,
     setTargetUrl,
     handleUrlChange,
@@ -30,38 +32,38 @@ const Popup = () => {
       <div>
         <UrlInput 
           value={sourceUrl}
-          onChange={(url) => handleUrlChange(url, setSourceUrl, 'sourceValid')}
+          onChange={(url) => handleUrlChange(url, setSourceUrl, setSourceValid)}
           placeholder="请输入源地址"
           history={sourceHistory}
           label="源地址"
           onDeleteHistory={handleDeleteSourceHistory}
-          isValid={urlValidation.sourceValid}
+          isValid={sourceValid}
         />
         
         <UrlInput 
           value={targetUrl}
-          onChange={(url) => handleUrlChange(url, setTargetUrl, 'targetValid')}
+          onChange={(url) => handleUrlChange(url, setTargetUrl, setTargetValid)}
           placeholder="请输入目标地址"
           history={targetHistory}
           label="目标地址"
           onDeleteHistory={handleDeleteTargetHistory}
-          isValid={urlValidation.targetValid}
+          isValid={targetValid}
         />
         
         <div className="flex space-x-2 mt-3">
           <Button
             type="primary"
             onClick={handleCopyCookies}
-            loading={loading.copy}
-            disabled={loading.copy || loading.clear || !urlValidation.sourceValid || !urlValidation.targetValid}
+            loading={copyLoading}
+            disabled={copyLoading || clearLoading || !sourceValid || !targetValid}
           >
             复制Cookie
           </Button>
           
           <Button
             onClick={handleClearCookies}
-            loading={loading.clear}
-            disabled={loading.copy || loading.clear || !urlValidation.targetValid}
+            loading={clearLoading}
+            disabled={copyLoading || clearLoading || !targetValid}
           >
             清空Cookie
           </Button>
