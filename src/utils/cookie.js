@@ -54,15 +54,10 @@ export const getCookies = async (url) => {
 // 设置Cookie到目标URL
 export const setCookies = async (cookies, targetUrl) => {
   if (!isValidUrl(targetUrl)) {
-    return {
-      successCount: 0,
-      failureCount: cookies.length,
-      failures: [{ error: '无效的目标URL格式' }]
-    };
+    return { successCount: 0 };
   }
   
   let successCount = 0;
-  const failures = [];
   
   for (const cookie of cookies) {
     try {
@@ -80,27 +75,21 @@ export const setCookies = async (cookies, targetUrl) => {
       successCount++;
     } catch (error) {
       console.error(`设置Cookie失败: ${cookie.name}`, error);
-      failures.push({ name: cookie.name, error: error.message || '未知错误' });
     }
   }
   
-  return { successCount, failureCount: failures.length, failures };
+  return successCount;
 };
 
 // 清除指定URL的所有Cookie
 export const clearCookies = async (url) => {
   if (!isValidUrl(url)) {
-    return {
-      successCount: 0,
-      failureCount: 0,
-      failures: [{ error: '无效的URL格式' }]
-    };
+    return { successCount: 0 };
   }
   
   try {
     const cookies = await chrome.cookies.getAll({ url });
     let successCount = 0;
-    const failures = [];
     
     for (const cookie of cookies) {
       try {
@@ -108,18 +97,13 @@ export const clearCookies = async (url) => {
         successCount++;
       } catch (error) {
         console.error(`删除Cookie失败: ${cookie.name}`, error);
-        failures.push({ name: cookie.name, error: error.message || '未知错误' });
       }
     }
     
-    return { successCount, failureCount: failures.length, failures };
+    return { successCount };
   } catch (error) {
     console.error('清除Cookie失败:', error);
-    return {
-      successCount: 0,
-      failureCount: 0,
-      failures: [{ error: error.message || '未知错误' }]
-    };
+    return { successCount: 0 };
   }
 };
 

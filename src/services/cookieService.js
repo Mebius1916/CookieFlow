@@ -29,7 +29,7 @@ export class CookieService {
       }
       
       const result = await setCookies(cookies, targetUrl);
-      await saveCookieOperation(sourceUrl, targetUrl, result.successCount);
+      await saveCookieOperation(sourceUrl, targetUrl, result);
       showOperationResult('复制', result);
       
       return true;

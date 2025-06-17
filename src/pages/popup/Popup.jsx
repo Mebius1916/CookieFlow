@@ -15,6 +15,8 @@ const Popup = () => {
     clearLoading,
     setSourceUrl,
     setTargetUrl,
+    setSourceValid,
+    setTargetValid,
     handleUrlChange,
     handleCopyCookies,
     handleClearCookies,

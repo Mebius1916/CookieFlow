@@ -6,10 +6,10 @@ export const showOperationResult = (operation, result) => {
     return;
   }
   
-  if (result.failureCount > 0) {
-    message.info(`成功${operation} ${result.successCount} 个Cookie，${result.failureCount} 个失败`);
-  } else {
+  if (result.successCount > 0) {
     message.success(`成功${operation} ${result.successCount} 个Cookie`);
+  } else {
+    message.info(`没有Cookie被${operation}`);
   }
 };
 
