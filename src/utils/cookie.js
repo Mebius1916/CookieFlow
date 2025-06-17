@@ -83,7 +83,16 @@ export const setCookies = async (cookies, targetUrl) => {
 
 // 清除指定URL的所有Cookie
 export const clearCookies = async (url) => {
+  if (!url) {
+    // 动态导入 antd message 以避免循环依赖
+    const { message } = await import('antd');
+    message.error('目标地址不能为空');
+    return { successCount: 0 };
+  }
+
   if (!isValidUrl(url)) {
+    const { message } = await import('antd');
+    message.error('无效的URL格式');
     return { successCount: 0 };
   }
   
@@ -99,10 +108,16 @@ export const clearCookies = async (url) => {
         console.error(`删除Cookie失败: ${cookie.name}`, error);
       }
     }
-    
+
+    // 显示操作结果
+    const { showOperationResult } = await import('./message');
+    showOperationResult('清除', { successCount });
+
     return { successCount };
   } catch (error) {
     console.error('清除Cookie失败:', error);
+    const { showError } = await import('./message');
+    showError('清除Cookie');
     return { successCount: 0 };
   }
 };
@@ -118,7 +133,7 @@ export const saveCookieOperation = async (source, target, successCount) => {
     };
     
     const history = await getCookieHistory();
-    const newHistory = [record, ...(history || [])].slice(0, 50);
+    const newHistory = [record, ...(history || [])].slice(0, 10);
     await saveCookieHistory(newHistory);
     
     return true;
@@ -173,4 +188,46 @@ export const deleteSourceUrlHistory = (index) =>
 
 // 删除目标地址历史记录
 export const deleteTargetUrlHistory = (index) => 
-  deleteUrlHistory(index, 'target', getTargetUrlHistory); 
+  deleteUrlHistory(index, 'target', getTargetUrlHistory);
+
+// 复制源URL的Cookie到目标URL
+export const copyCookies = async (sourceUrl, targetUrl) => {
+  // 验证URL
+  const { validateFormUrls } = await import('./urlValidation');
+  const validation = validateFormUrls(sourceUrl, targetUrl);
+  
+  if (!validation.isValid) {
+    const { message } = await import('antd');
+    message.error(validation.errors[0]);
+    return false;
+  }
+  
+  try {
+    // 获取源地址Cookie
+    const cookies = await getCookies(sourceUrl);
+    
+    // 判断Cookie数量
+    if (cookies.length === 0) {
+      const { showInfo } = await import('./message');
+      showInfo('源地址没有可复制的Cookie');
+      return true;
+    }
+    
+    // 设置目标地址Cookie
+    const result = await setCookies(cookies, targetUrl);
+    
+    // 保存操作记录
+    await saveCookieOperation(sourceUrl, targetUrl, result);
+    
+    // 显示操作结果
+    const { showOperationResult } = await import('./message');
+    showOperationResult('复制', result);
+    
+    return true;
+  } catch (error) {
+    console.error('复制Cookie失败:', error);
+    const { showError } = await import('./message');
+    showError('复制Cookie');
+    return false;
+  }
+}; 
