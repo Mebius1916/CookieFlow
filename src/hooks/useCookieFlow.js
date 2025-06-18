@@ -4,13 +4,15 @@ import {
   copyCookies,
   deleteSourceUrlHistory,
   deleteTargetUrlHistory,
+  getSourceUrlHistory,
+  getTargetUrlHistory,
 } from '../utils/cookie';
 import { 
   updateHistory, 
   handleUrlChange, 
-  handleDeleteHistory 
 } from '../utils/history';
 import { initializeData } from '../utils/init';
+import { showError } from '../utils/message';
 
 export const useCookieFlow = () => {
   const [sourceUrl, setSourceUrl] = useState('');
@@ -48,18 +50,30 @@ export const useCookieFlow = () => {
   };
 
   // 删除源地址历史记录
-  const handleDeleteSourceHistory = (index) => handleDeleteHistory(
-    () => deleteSourceUrlHistory(index),
-    setSourceHistory,
-    '删除源地址历史记录失败:'
-  );
+  const handleDeleteSourceHistory = async (index) => {
+    try {
+      await deleteSourceUrlHistory(index);
+      // 直接获取最新的历史记录
+      const newSourceHistory = await getSourceUrlHistory();
+      setSourceHistory(newSourceHistory || []);
+    } catch (error) {
+      console.error('删除源地址历史记录失败:', error);
+      showError('删除历史记录');
+    }
+  };
 
   // 删除目标地址历史记录
-  const handleDeleteTargetHistory = (index) => handleDeleteHistory(
-    () => deleteTargetUrlHistory(index),
-    setTargetHistory,
-    '删除目标地址历史记录失败:'
-  );
+  const handleDeleteTargetHistory = async (index) => {
+    try {
+      await deleteTargetUrlHistory(index);
+      // 直接获取最新的历史记录
+      const newTargetHistory = await getTargetUrlHistory();
+      setTargetHistory(newTargetHistory || []);
+    } catch (error) {
+      console.error('删除目标地址历史记录失败:', error);
+      showError('删除历史记录');
+    }
+  };
 
   useEffect(() => {
     initializeData(setSourceUrl, setSourceHistory, setTargetHistory);

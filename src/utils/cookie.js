@@ -78,7 +78,7 @@ export const setCookies = async (cookies, targetUrl) => {
     }
   }
   
-  return successCount;
+  return { successCount };
 };
 
 // 清除指定URL的所有Cookie
@@ -90,19 +90,22 @@ export const clearCookies = async (url) => {
     return { successCount: 0 };
   }
 
-  if (!isValidUrl(url)) {
+  // 处理URL：提取origin部分
+  const processedUrl = extractOrigin(url);
+
+  if (!isValidUrl(processedUrl)) {
     const { message } = await import('antd');
     message.error('无效的URL格式');
     return { successCount: 0 };
   }
   
   try {
-    const cookies = await chrome.cookies.getAll({ url });
+    const cookies = await chrome.cookies.getAll({ url: processedUrl });
     let successCount = 0;
     
     for (const cookie of cookies) {
       try {
-        await chrome.cookies.remove({ url, name: cookie.name });
+        await chrome.cookies.remove({ url: processedUrl, name: cookie.name });
         successCount++;
       } catch (error) {
         console.error(`删除Cookie失败: ${cookie.name}`, error);
@@ -156,10 +159,10 @@ const getUrlHistory = async (field) => {
 };
 
 // 通用的历史记录删除函数
-const deleteUrlHistory = async (index, field, getHistoryFn) => {
+const deleteUrlHistory = async (index, field) => {
   try {
     const history = await getCookieHistory();
-    if (!history || history.length === 0) return [];
+    if (!history || history.length === 0) return;
     
     const urls = [...new Set(history.map(item => item[field]))].slice(0, 10);
     const urlToDelete = urls[index];
@@ -168,11 +171,9 @@ const deleteUrlHistory = async (index, field, getHistoryFn) => {
       const newHistory = history.filter(item => item[field] !== urlToDelete);
       await saveCookieHistory(newHistory);
     }
-    
-    return await getHistoryFn();
   } catch (error) {
     console.error(`删除${field}历史记录失败:`, error);
-    return [];
+    throw error;
   }
 };
 
@@ -184,17 +185,21 @@ export const getTargetUrlHistory = () => getUrlHistory('target');
 
 // 删除源地址历史记录
 export const deleteSourceUrlHistory = (index) => 
-  deleteUrlHistory(index, 'source', getSourceUrlHistory);
+  deleteUrlHistory(index, 'source');
 
 // 删除目标地址历史记录
 export const deleteTargetUrlHistory = (index) => 
-  deleteUrlHistory(index, 'target', getTargetUrlHistory);
+  deleteUrlHistory(index, 'target');
 
 // 复制源URL的Cookie到目标URL
 export const copyCookies = async (sourceUrl, targetUrl) => {
+  // 处理URL：提取origin部分
+  const processedSourceUrl = extractOrigin(sourceUrl);
+  const processedTargetUrl = extractOrigin(targetUrl);
+  
   // 验证URL
   const { validateFormUrls } = await import('./urlValidation');
-  const validation = validateFormUrls(sourceUrl, targetUrl);
+  const validation = validateFormUrls(processedSourceUrl, processedTargetUrl);
   
   if (!validation.isValid) {
     const { message } = await import('antd');
@@ -204,7 +209,7 @@ export const copyCookies = async (sourceUrl, targetUrl) => {
   
   try {
     // 获取源地址Cookie
-    const cookies = await getCookies(sourceUrl);
+    const cookies = await getCookies(processedSourceUrl);
     
     // 判断Cookie数量
     if (cookies.length === 0) {
@@ -214,10 +219,10 @@ export const copyCookies = async (sourceUrl, targetUrl) => {
     }
     
     // 设置目标地址Cookie
-    const result = await setCookies(cookies, targetUrl);
+    const result = await setCookies(cookies, processedTargetUrl);
     
-    // 保存操作记录
-    await saveCookieOperation(sourceUrl, targetUrl, result);
+    // 保存操作记录（使用处理后的URL）
+    await saveCookieOperation(processedSourceUrl, processedTargetUrl, result.successCount);
     
     // 显示操作结果
     const { showOperationResult } = await import('./message');

@@ -15,7 +15,8 @@ export const processUrlInput = (url) => {
   
   return {
     isValid,
-    processedUrl: isValid ? extractOrigin(trimmedUrl) : url
+    // 只有在URL有效时才提取origin，否则保持原样
+    processedUrl: isValid ? extractOrigin(trimmedUrl) : trimmedUrl
   };
 };
 
@@ -23,19 +24,19 @@ export const processUrlInput = (url) => {
 export const validateFormUrls = (sourceUrl, targetUrl) => {
   const errors = [];
   
-  if (!sourceUrl) {
+  if (!sourceUrl || !sourceUrl.trim()) {
     errors.push('源地址不能为空');
   }
   
-  if (!targetUrl) {
+  if (!targetUrl || !targetUrl.trim()) {
     errors.push('目标地址不能为空');
   }
   
-  if (sourceUrl && !isValidUrl(sourceUrl)) {
+  if (sourceUrl && sourceUrl.trim() && !isValidUrl(sourceUrl.trim())) {
     errors.push('源地址格式不正确');
   }
   
-  if (targetUrl && !isValidUrl(targetUrl)) {
+  if (targetUrl && targetUrl.trim() && !isValidUrl(targetUrl.trim())) {
     errors.push('目标地址格式不正确');
   }
   

@@ -12,6 +12,7 @@ const UrlInput = ({
   isValid = true
 }) => {
   const [open, setOpen] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   
   const handleHistoryClick = (url) => {
     onChange(url);
@@ -23,6 +24,21 @@ const UrlInput = ({
     if (onDeleteHistory) {
       onDeleteHistory(index);
     }
+  };
+
+  // 改进输入处理，避免在输入过程中干扰用户
+  const handleInputChange = (e) => {
+    onChange(e.target.value);
+  };
+
+  // 失去焦点时关闭下拉菜单
+  const handleBlur = () => {
+    setIsFocused(false);
+    setOpen(false);
+  };
+
+  const handleFocus = () => {
+    setIsFocused(true);
   };
   
   //历史记录的item
@@ -43,6 +59,9 @@ const UrlInput = ({
       </div>
     }))
   };
+
+  // 只有在有内容且无效时才显示错误状态
+  const showError = !isValid && value && value.trim() && !isFocused;
 
   return (
     <div className="mb-4 relative">
@@ -65,9 +84,11 @@ const UrlInput = ({
       >
         <Input
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={handleInputChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           placeholder={placeholder}
-          status={!isValid && value.trim() ? 'error' : ''}
+          status={showError ? 'error' : ''}
           suffix={
             <HistoryOutlined
               className={`cursor-pointer ${
@@ -86,7 +107,7 @@ const UrlInput = ({
         />
       </Dropdown>
       
-      {!isValid && value.trim() && (
+      {showError && (
         <div className="absolute left-0 top-full mt-1 text-red-500 text-xs bg-white border border-red-200 rounded px-2 py-1 shadow-sm z-10 max-w-full">
           URL格式不正确，请输入完整的URL（如：https://example.com）
         </div>
