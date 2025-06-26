@@ -58,23 +58,56 @@ export const setCookies = async (cookies, targetUrl) => {
   }
   
   let successCount = 0;
+  const targetUrlObj = new URL(targetUrl);
   
   for (const cookie of cookies) {
     try {
-      await chrome.cookies.set({
+      // 创建cookie设置对象
+      const cookieDetails = {
         url: targetUrl,
         name: cookie.name,
         value: cookie.value,
-        domain: cookie.domain,
         path: cookie.path,
         secure: cookie.secure,
         httpOnly: cookie.httpOnly,
         sameSite: cookie.sameSite,
         expirationDate: cookie.expirationDate,
-      });
+      };
+
+      // 处理domain属性 - 这是关键修复
+      // 如果原cookie的domain与目标URL的hostname不匹配，则需要调整
+      if (cookie.domain) {
+        // 检查原domain是否适用于目标URL
+        if (targetUrlObj.hostname.endsWith(cookie.domain.replace(/^\./, '')) || 
+            cookie.domain === targetUrlObj.hostname ||
+            cookie.domain === '.' + targetUrlObj.hostname) {
+          // 如果匹配，使用原domain
+          cookieDetails.domain = cookie.domain;
+        } else {
+          // 如果不匹配，则不设置domain属性，让chrome自动处理
+          // 这样cookie会成为host-only cookie
+          console.warn(`Cookie ${cookie.name} 的domain "${cookie.domain}" 与目标URL "${targetUrlObj.hostname}" 不匹配，将设置为host-only cookie`);
+        }
+      }
+
+      // 额外的验证
+      if (cookieDetails.secure && !targetUrl.startsWith('https://')) {
+        console.warn(`Cookie ${cookie.name} 标记为secure但目标URL不是HTTPS，可能设置失败`);
+      }
+
+      await chrome.cookies.set(cookieDetails);
       successCount++;
+      console.log(`成功设置Cookie: ${cookie.name}`);
     } catch (error) {
       console.error(`设置Cookie失败: ${cookie.name}`, error);
+      console.error('Cookie详细信息:', {
+        name: cookie.name,
+        domain: cookie.domain,
+        targetHostname: targetUrlObj.hostname,
+        secure: cookie.secure,
+        httpOnly: cookie.httpOnly,
+        sameSite: cookie.sameSite
+      });
     }
   }
   
